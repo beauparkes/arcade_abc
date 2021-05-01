@@ -75,7 +75,7 @@ class SpaceShooter(arcade.Window):
         # Set its position to a random height and off screen right
         enemy.left = random.randint(0, self.width)
         enemy.top = random.randint(10, self.height - 10)
-        
+
         # Set its speed to a random speed heading left
         enemy.velocity = (random.randint(-200, -50), 0)
 
@@ -87,7 +87,6 @@ class SpaceShooter(arcade.Window):
         """
         arcade.start_render()
         self.all_sprites.draw()
-
 
 
 # Main code entry point

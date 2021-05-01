@@ -1,18 +1,41 @@
-# Basic arcade shooter
+# PvZ Game
 #
 
 # Imports
 import arcade
 import random
+import os
 
 # Constants
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-SCREEN_TITLE = "Arcade Space Shooter"
+SCREEN_TITLE = "PvZ Game"
 SCALING = 2.0
 
-# Classes
+RIGHT_FACING = 0
+LEFT_FACING = 1
 
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+def load_texture_pair(filename):
+    """
+    Load a texture pair, with the second being a mirror image.
+    """
+    return [
+        arcade.load_texture(filename),
+        arcade.load_texture(filename, flipped_horizontally=True)
+    ]
+
+# Classes
 
 class FlyingSprite(arcade.Sprite):
     """Base class for all flying sprites
@@ -25,14 +48,14 @@ class FlyingSprite(arcade.Sprite):
         """
 
         # Move the sprite
-        super().update()
+        #super().update()
 
         # Remove us if we're off screen
-        if self.right < 0:
-            self.remove_from_sprite_lists()
+        #if self.left < 400:
+        #    self.remove_from_sprite_lists()
 
 
-class SpaceShooter(arcade.Window):
+class pvz(arcade.Window):
     """Space Shooter side scroller game
     Player starts on the left, enemies appear on the right
     Player can move anywhere, but not off screen
@@ -45,8 +68,8 @@ class SpaceShooter(arcade.Window):
         super().__init__(width, height, title)
 
         # Setup the empty sprite lists
-        self.enemies_list = arcade.SpriteList()
-        self.clouds_list = arcade.SpriteList()
+        self.pea_list = arcade.SpriteList()
+        self.plants_list = arcade.SpriteList()
         self.all_sprites = arcade.SpriteList()
 
     def setup(self):
@@ -55,31 +78,38 @@ class SpaceShooter(arcade.Window):
         # Set the background color
         arcade.set_background_color(arcade.color.SKY_BLUE)
 
+        global skill_level
+        skill_level = 0
+
+        # setup scoreboard
+        self.time = 0
+        arcade.schedule(self.set_time, 1)
+
+        # Set mouse vis off
+        self.set_mouse_visible(False)
+
         # Setup the player
-        self.player = arcade.Sprite("pvz_images/zombie_2.png", SCALING*0.1)
+        self.player = arcade.Sprite()
+        global player_texture
+        player_texture = load_texture_pair(resource_path("pvz_images/zombie_2.png"))
+        self.player.texture = player_texture[0]
+        self.player.scale = SCALING * 0.1
         self.player.center_y = self.height / 2
         self.player.left = 10
         self.all_sprites.append(self.player)
 
+        # Spawn a new plant
+        self.add_plant(0)
+
         # Spawn a new enemy every second
-        arcade.schedule(self.add_enemy, 1)
+        arcade.schedule(self.add_pea, 2)
 
-        # Spawn a new cloud every 3 seconds
-        #arcade.schedule(self.add_cloud, 3.0)
-        self.add_cloud(0)
+        # pvz sound fx
+        self.background_music = arcade.load_sound(resource_path("pvz_sounds/Grasswalk.mp3"))
 
-        # Load our background music
-        # Sound source: http://ccmixter.org/files/Apoxode/59262
-        # License: https://creativecommons.org/licenses/by/3.0/
-        self.background_music = arcade.load_sound(
-            "sounds/Apoxode_-_Electric_1.wav"
-        )
+        self.pea_sound = arcade.load_sound(resource_path("pvz_sounds/pea.wav"))
 
-        # Load our other sounds
-        # Sound sources: Jon Fincher
-        self.collision_sound = arcade.load_sound("sounds/Collision.wav")
-        self.move_up_sound = arcade.load_sound("sounds/Rising_putter.wav")
-        self.move_down_sound = arcade.load_sound("sounds/Falling_putter.wav")
+        self.collision_sound = arcade.load_sound(resource_path("pvz_sounds/Collision.wav"))
 
         # Start the background music
         arcade.play_sound(self.background_music)
@@ -89,44 +119,75 @@ class SpaceShooter(arcade.Window):
         self.collided = False
         self.collision_timer = 0.0
 
-    def add_enemy(self, delta_time: float):
-        """Adds a new enemy to the screen
-        Arguments:
-            delta_time {float} -- How much time has passed since the last call
-        """
+    def set_time(self, interval):
+        self.time += 1
 
-        # First, create the new enemy sprite
-        enemy = FlyingSprite("pvz_images/pea_1.png", SCALING*0.05)
-
-        # Set its position to a random height and off screen right
-        offset = random.randint(0, 5)
-        enemy.left = self.width - 200
-        enemy.top = 160 + offset * 250
-
-        # Set its speed to a random speed heading left
-        enemy.velocity = (random.randint(-200, -50), 0)
-
-        # Add it to the enemies list
-        self.enemies_list.append(enemy)
-        self.all_sprites.append(enemy)
-
-    def add_cloud(self, delta_time: float):
+    def add_plant(self, delta_time: float):
         """Adds a new cloud to the screen
         Arguments:
             delta_time {float} -- How much time has passed since the last call
         """
 
-        plants = 5
-        for i in range(plants):
-            # First, create the new cloud sprite
-            cloud = arcade.Sprite("pvz_images/plant_2.png", SCALING*0.05)
-            # Set its position to a random height and off screen right
-            #spacing = [100, 300, 500, 700, 900]
-            cloud.right = self.width - 20
-            cloud.top = 180 + i * 250
-            # Add it to the enemies list
-            self.clouds_list.append(cloud)
-            self.all_sprites.append(cloud)
+        # First, create the new cloud sprite
+
+        plant = arcade.Sprite(resource_path("pvz_images/plant_2.png"), SCALING*0.05)
+        # Set its position to a random height and off screen right
+        #spacing = [100, 300, 500, 700, 900]
+        plant.right = self.width - 20
+        plant.top = 700
+        # Add it to the enemies list
+        self.plants_list.append(plant)
+        self.all_sprites.append(plant)
+        plant.velocity = (0, random.randint(-200, -50))
+
+    def add_pea(self, delta_time: float):
+        """Adds a new enemy to the screen
+        Arguments:
+            delta_time {float} -- How much time has passed since the last call
+        """
+
+        # Setup pea
+        self.pea = FlyingSprite(resource_path("pvz_images/pea_1.png"), SCALING*0.05)
+
+        # Set its position to a random height and off screen right
+        self.pea.right = self.width - 170
+        self.pea.top = self.plants_list[0].top - 20
+        # Set its speed to a random speed heading left
+        self.pea.velocity = (random.randint(-200, -50), 0)
+
+        # Add it to the pea list
+        self.pea_list.append(self.pea)
+        self.all_sprites.append(self.pea)
+
+        # Add sound effect
+        arcade.play_sound(self.pea_sound)
+
+        global skill_level
+        arcade.unschedule(self.add_pea)
+        speedMin = 3
+        speedMax = 4
+        skill_level = 0
+        if self.time > 20:
+            speedMin = 2
+            speedMax = 4
+            skill_level = 1
+        if self.time > 40:
+            speedMin = 2
+            speedMax = 3
+            skill_level = 2
+        if self.time > 60:
+            speedMin = 2
+            speedMax = 2
+            skill_level = 3
+        if self.time > 80:
+            speedMin = 1
+            speedMax = 2
+            skill_level = 4
+        if self.time > 100:
+            speedMin = 1
+            speedMax = 1
+            skill_level = 5
+        arcade.schedule(self.add_pea, random.randint(speedMin, speedMax))
 
     def on_key_press(self, symbol: int, modifiers: int):
         """Handle user keyboard input
@@ -147,17 +208,19 @@ class SpaceShooter(arcade.Window):
 
         if symbol == arcade.key.I or symbol == arcade.key.UP:
             self.player.change_y = 250
-            arcade.play_sound(self.move_up_sound)
+            #arcade.play_sound(self.move_up_sound)
 
         if symbol == arcade.key.K or symbol == arcade.key.DOWN:
             self.player.change_y = -250
-            arcade.play_sound(self.move_down_sound)
+            #arcade.play_sound(self.move_down_sound)
 
         if symbol == arcade.key.J or symbol == arcade.key.LEFT:
             self.player.change_x = -250
+            self.player.texture = player_texture[1]
 
         if symbol == arcade.key.L or symbol == arcade.key.RIGHT:
             self.player.change_x = 250
+            self.player.texture = player_texture[0]
 
     def on_key_release(self, symbol: int, modifiers: int):
         """Undo movement vectors when movement keys are released
@@ -194,7 +257,7 @@ class SpaceShooter(arcade.Window):
         if self.collided:
             self.collision_timer += delta_time
             # If we've paused for two seconds, we can quit
-            if self.collision_timer > 2.0:
+            if self.collision_timer > 5.0:
                 arcade.close_window()
             # Stop updating things as well
             return
@@ -204,10 +267,15 @@ class SpaceShooter(arcade.Window):
             return
 
         # Did we hit anything? If so, end the game
-        if self.player.collides_with_list(self.enemies_list):
+        if self.player.collides_with_list(self.pea_list):
+            arcade.unschedule(self.set_time)
             self.collided = True
             self.collision_timer = 0.0
             arcade.play_sound(self.collision_sound)
+
+        for pea in self.pea_list:
+            if pea.left < 0:
+              pea.remove_from_sprite_lists()
 
         # Update everything
         for sprite in self.all_sprites:
@@ -217,7 +285,6 @@ class SpaceShooter(arcade.Window):
             sprite.center_y = int(
                 sprite.center_y + sprite.change_y * delta_time
             )
-        # self.all_sprites.update()
 
         # Keep the player on screen
         if self.player.top > self.height:
@@ -229,16 +296,32 @@ class SpaceShooter(arcade.Window):
         if self.player.left < 0:
             self.player.left = 0
 
+        # Keep the plant on screen
+        if self.plants_list[0].top > self.height:
+            self.plants_list[0].velocity = (0, -random.randint(150, 250))
+        if self.plants_list[0].bottom < 0:
+            self.plants_list[0].velocity = (0, random.randint(150, 250))
+
     def on_draw(self):
         """Draw all game objects"""
 
         arcade.start_render()
         self.all_sprites.draw()
 
+        # Put the text on the screen.
+        if not self.collided:
+            output = f"Score: {self.time}"
+            skill = {0: (255,255,255), 1: (50,50,255), 2: (50,180,50), 3: (150,50,255), 4: (150,100,100), 5: (255,50,50)}
+            arcade.draw_text(output, self.width/2.3, self.height-50, skill[skill_level], 30)
+
+        if self.collided:
+            output = f"Total Score: {self.time}"
+            arcade.draw_text(output, self.width/3.5, self.height - self.height/2, arcade.color.WHITE, 100)
+
 
 if __name__ == "__main__":
     # Create a new Space Shooter window
-    space_game = SpaceShooter(
+    space_game = pvz(
         int(SCREEN_WIDTH * SCALING), int(SCREEN_HEIGHT * SCALING), SCREEN_TITLE
     )
     # Setup to play
