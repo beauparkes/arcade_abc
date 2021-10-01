@@ -9,13 +9,33 @@ TITLE = "BP ABC GAME"
 SPRITE_SCALE = 1
 gameOverScore = 0
 keys = {
-        "97": "A", "98": "B", "99": "C", "100": "D", "101": "E",
-        "102": "F", "103": "G", "104": "H", "105": "I", "106": "J",
-        "107": "K", "108": "L", "109": "M", "110": "N", "111": "O",
-        "112": "P", "113": "Q", "114": "R", "115": "S", "116": "T",
-        "117": "U", "118": "v", "119": "W", "120": "x", "121": "Y",
-        "122": "Z"
-    }
+    "97": "A",
+    "98": "B",
+    "99": "C",
+    "100": "D",
+    "101": "E",
+    "102": "F",
+    "103": "G",
+    "104": "H",
+    "105": "I",
+    "106": "J",
+    "107": "K",
+    "108": "L",
+    "109": "M",
+    "110": "N",
+    "111": "O",
+    "112": "P",
+    "113": "Q",
+    "114": "R",
+    "115": "S",
+    "116": "T",
+    "117": "U",
+    "118": "v",
+    "119": "W",
+    "120": "x",
+    "121": "Y",
+    "122": "Z",
+}
 
 
 def getKey(key):
@@ -24,7 +44,7 @@ def getKey(key):
 
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+    """Get absolute path to resource, works for dev and for PyInstaller"""
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
@@ -40,7 +60,9 @@ class mushroom(arcade.Sprite):
 
         self.mushroom_images = []
         for i in range(11):
-            mush = arcade.load_texture(resource_path("abc_images/mush_{}.png".format(i+1)))
+            mush = arcade.load_texture(
+                resource_path("abc_images/mush_{}.png".format(i + 1))
+            )
             self.mushroom_images.append(mush)
         self.texture = self.mushroom_images[0]
 
@@ -49,36 +71,42 @@ class mushroom(arcade.Sprite):
             self.texture = self.mushroom_images[lose_score]
         else:
             return
-    
+
     def row_score_hit(self, lose_score):
         self.texture = self.mushroom_images[lose_score - 1]
 
 
-class letter():
+class letter:
     def __init__(self):
         pass
 
     def rand(self):
         self.current_letter_dict = random.choice(list(keys.items()))
         let = self.current_letter_dict[1]
-        self.current_letter_display = "{0}{1}".format(let.upper(),let.lower())
-        
+        self.current_letter_display = "{0}{1}".format(let.upper(), let.lower())
+
 
 class MenuView(arcade.View):
-    """ Class that manages the 'menu' view. """
+    """Class that manages the 'menu' view."""
 
     def on_show(self):
-        """ Called when switching to this view"""
+        """Called when switching to this view"""
         arcade.set_background_color(arcade.color.WHITE)
 
     def on_draw(self):
-        """ Draw the menu """
+        """Draw the menu"""
         arcade.start_render()
-        arcade.draw_text("Menu Screen - Hit Enter to begin", WIDTH/2, HEIGHT/2,
-                         arcade.color.BLACK, font_size=30, anchor_x="center")
+        arcade.draw_text(
+            "Menu Screen - Hit Enter to begin",
+            WIDTH / 2,
+            HEIGHT / 2,
+            arcade.color.BLACK,
+            font_size=30,
+            anchor_x="center",
+        )
 
     def on_key_press(self, key, _modifiers):
-        """ If user hits enter, begin gameview """
+        """If user hits enter, begin gameview"""
         if key == arcade.key.ENTER:
             game_view = GameView()
             game_view.setup()
@@ -86,7 +114,7 @@ class MenuView(arcade.View):
 
 
 class GameView(arcade.View):
-    """ Manage the 'game' view for our program. """
+    """Manage the 'game' view for our program."""
 
     def __init__(self):
         super().__init__()
@@ -98,10 +126,9 @@ class GameView(arcade.View):
         self.row_score_max = 10
         self.playerScore = 0
         self.seed = random.SystemRandom(9)
-        #print(self.seed)
 
     def setup(self):
-        """ This should set up your game and get it ready to play """
+        """This should set up your game and get it ready to play"""
         self.lose_score = 0
         self.playerScore = 0
         self.player_list = arcade.SpriteList()
@@ -115,21 +142,33 @@ class GameView(arcade.View):
         letter.rand(self)
 
     def on_show(self):
-        """ Called when switching to this view"""
+        """Called when switching to this view"""
         arcade.set_background_color(arcade.color.BLUE_GREEN)
 
     def on_draw(self):
-        """ Draw everything for the game. """
+        """Draw everything for the game."""
         arcade.start_render()
 
         # Draw sprites
         self.player_list.draw()
 
-        arcade.draw_text(self.current_letter_display, WIDTH/2, HEIGHT/1.5,
-                         arcade.color.BLACK, font_size=200, anchor_x="center")
+        arcade.draw_text(
+            self.current_letter_display,
+            WIDTH / 2,
+            HEIGHT / 1.5,
+            arcade.color.BLACK,
+            font_size=200,
+            anchor_x="center",
+        )
 
-        arcade.draw_text("Your Score: {}".format(str(self.playerScore)), WIDTH/1.2, HEIGHT/1.1,
-                         arcade.color.BLACK, font_size=30, anchor_x="center")
+        arcade.draw_text(
+            "Your Score: {}".format(str(self.playerScore)),
+            WIDTH / 1.2,
+            HEIGHT / 1.1,
+            arcade.color.BLACK,
+            font_size=30,
+            anchor_x="center",
+        )
 
     def on_update(self, delta_time):
 
@@ -141,20 +180,17 @@ class GameView(arcade.View):
             self.window.show_view(game_over_view)
 
     def on_key_press(self, key, _modifiers):
-        """ Handle keypresses. In this case, we'll just count a 'space' as
-        game over and advance to the game over view. """
+        """Handle keypresses. In this case, we'll just count a 'space' as
+        game over and advance to the game over view."""
 
-        #print(getKey(key))
-        #print(self.current_letter)
-        print("row_score = {}".format(self.row_score))
-        print("lose score = {}".format(self.lose_score))
+        # print("row_score = {}".format(self.row_score))
+        # print("lose score = {}".format(self.lose_score))
 
         if key != int(self.current_letter_dict[0]):
             self.lose_score += 1
             self.row_score = 0
 
         if key == int(self.current_letter_dict[0]):
-            #self.current_letter = letter.rand()
             self.playerScore += 1
             self.row_score += 1
             if self.row_score == self.row_score_max and self.lose_score > 0:
@@ -169,29 +205,42 @@ class GameView(arcade.View):
 
 
 class GameOverView(arcade.View):
-    """ Class to manage the game over view """
+    """Class to manage the game over view"""
+
     def on_show(self):
-        """ Called when switching to this view"""
+        """Called when switching to this view"""
         arcade.set_background_color(arcade.color.BLACK)
 
     def on_draw(self):
-        """ Draw the game over view """
+        """Draw the game over view"""
         arcade.start_render()
-        arcade.draw_text("Game Over!", WIDTH/2, HEIGHT/1.9,
-                         arcade.color.WHITE, 50, anchor_x="center")
+        arcade.draw_text(
+            "Game Over!",
+            WIDTH / 2,
+            HEIGHT / 1.9,
+            arcade.color.WHITE,
+            50,
+            anchor_x="center",
+        )
 
-        arcade.draw_text("Your best score was {}".format(str(gameOverScore)), WIDTH/2, HEIGHT/2.2,
-                         arcade.color.WHITE, font_size=30, anchor_x="center")
+        arcade.draw_text(
+            "Your best score was {}".format(str(gameOverScore)),
+            WIDTH / 2,
+            HEIGHT / 2.2,
+            arcade.color.WHITE,
+            font_size=30,
+            anchor_x="center",
+        )
 
     def on_key_press(self, key, _modifiers):
-        """ If user hits escape, go back to the main menu view """
+        """If user hits escape, go back to the main menu view"""
         if key == arcade.key.ESCAPE:
             menu_view = MenuView()
             self.window.show_view(menu_view)
 
 
 def main():
-    """ Startup """
+    """Startup"""
     window = arcade.Window(WIDTH, HEIGHT, TITLE)
     menu_view = MenuView()
     window.show_view(menu_view)
